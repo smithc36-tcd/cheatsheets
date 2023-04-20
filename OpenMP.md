@@ -59,6 +59,54 @@ int main() {
 }
 ```
 
+## OpenMP Library Funtions 
+
+OpenMP provides library functions for controlling and querying various aspects of parallel execution
+
+- `omp_set_num_threads(int)`: Set the number of threads for subsequent parallel regions
+- `omp_get_num_threads()`: Get the number of threads in the current parallel region
+- `omp_get_thread_num()`: Get the ID of the calling thread
+- `omp_get_num_procs()`: Get the number of available processors
+- `omp_get_wtime()`: Get the current wall-clock time
+
+You can use these functions in your code to control and monitor the parallel execution:
+
+```c
+#include <omp.h>
+#include <stdio.h>
+
+int main() {
+    int num_threads = omp_get_num_procs(); // Get the number of available processors
+    omp_set_num_threads(num_threads); // Set the number of threads
+
+    double start_time = omp_get_wtime(); // Get the start time
+
+    #pragma omp parallel
+    {
+        // Parallel code
+    }
+
+    double end_time = omp_get_wtime(); // Get the end time
+    printf("Execution time: %f seconds\n", end_time - start_time);
+
+    return 0;
+}
+```
+
+## OpenMP Environment variables
+
+You can control various aspects of OpenMP execution through environment variables:
+
+- `OMP_NUM_THREADS`: Set the default number of threads for parallel regions
+- `OMP_NESTED`: Enable or disable nested parallelism
+- `OMP_SCHEDULE`: Set the default loop scheduling policy and chunk size
+- `OMP_MAX_ACTIVE_LEVELS`: Set the maximum number of nested active parallel regions
+
+```bash 
+export OMP_NUM_THREADS=4
+./my_openmp_program
+```
+
 ## Parallel Loops
 
 OpenMP simplifies parallelizing loops with the
@@ -169,3 +217,79 @@ different threads using the `#pragma omp sections` directive:
     }
 }
 ```
+
+## Task parallelism
+
+You can also use OpenMP's task construct for more flexible parallelism. Tasks 
+can be executed concurrently and in any order, allowing for parallelism in 
+irregular algorithms or when it is not possible to determine the amount of 
+work in advance.
+
+```c
+#pragma omp parallel
+{
+    #pragma omp single
+    {
+        #pragma omp task
+        {
+            // Code executed by one task
+        }
+
+        #pragma omp task
+        {
+            // Code executed by another task
+        }
+    }
+}
+```
+
+## Nested parallelism
+
+OpenMP supports nested parallelism, allowing you to create parallel regions 
+inside other parallel regions. To enable nested parallelism, use the 
+`omp_set_nested(int)` function or set the `OMP_NESTED` environment variable:
+
+```c
+omp_set_nested(1); // Enable nested parallelism
+
+#pragma omp parallel num_threads(2)
+{
+    #pragma omp parallel num_threads(2)
+    {
+        // Code executed by a nested parallel region
+    }
+}
+```
+
+
+
+## OpenMP Scheduling Policies
+
+You can control the loop iteration scheduling policy with the schedule clause 
+in the `#pragma omp parallel for` directive. OpenMP provides several scheduling 
+policies:
+
+- `static`: Divide the loop iterations into equal-sized chunks, and assign each chunk to a thread. You can specify the chunk size or let OpenMP determine it automatically.
+
+- `dynamic`: Dynamically assign loop iterations to threads as they become available. You can specify the chunk size or let OpenMP determine it automatically.
+
+- `guided`: Similar to dynamic scheduling, but the chunk size decreases exponentially over time. You can specify the minimum chunk size or let OpenMP determine it automatically.
+
+- `auto`: Let the OpenMP runtime choose the scheduling policy and chunk size.
+
+```c
+#include <omp.h>
+#include <stdio.h>
+
+int main() {
+    int n = 100;
+
+    #pragma omp parallel for schedule(dynamic, 10)
+    for (int i = 0; i < n; i++) {
+        // Code executed by each thread concurrently
+    }
+
+    return 0;
+}
+```
+

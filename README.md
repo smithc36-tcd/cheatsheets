@@ -1,1 +1,3 @@
 # cheatcheets
+
+- OpenMP

@@ -218,30 +218,6 @@ different threads using the `#pragma omp sections` directive:
 }
 ```
 
-## Task parallelism
-
-You can also use OpenMP's task construct for more flexible parallelism. Tasks 
-can be executed concurrently and in any order, allowing for parallelism in 
-irregular algorithms or when it is not possible to determine the amount of 
-work in advance.
-
-```c
-#pragma omp parallel
-{
-    #pragma omp single
-    {
-        #pragma omp task
-        {
-            // Code executed by one task
-        }
-
-        #pragma omp task
-        {
-            // Code executed by another task
-        }
-    }
-}
-```
 
 ## Nested parallelism
 
@@ -290,6 +266,116 @@ int main() {
     }
 
     return 0;
+}
+```
+
+## Task parallelism
+
+You can also use OpenMP's task construct for more flexible parallelism. Tasks 
+can be executed concurrently and in any order, allowing for parallelism in 
+irregular algorithms or when it is not possible to determine the amount of 
+work in advance.
+
+```c
+#pragma omp parallel
+{
+    #pragma omp single
+    {
+        #pragma omp task
+        {
+            // Code executed by one task
+        }
+
+        #pragma omp task
+        {
+            // Code executed by another task
+        }
+    }
+}
+```
+
+### `#pragma omp taskwait`
+
+This directive is used to introduce a synchronization point in the code, where 
+the current task waits for the completion of all its child tasks before 
+proceeding. This can be useful for ensuring that the necessary data is 
+available before continuing execution.
+
+```c 
+#pragma omp parallel
+{
+    #pragma omp single
+    {
+        #pragma omp task
+        {
+            // Task 1
+        }
+
+        #pragma omp task
+        {
+            // Task 2
+        }
+
+        #pragma omp taskwait
+        // Task 1 and Task 2 must complete before this point
+    }
+}
+```
+
+### `#pragma omp taskyield`
+
+This directive is used to provide a hint to the OpenMP runtime that the current 
+task can be suspended to allow other tasks to execute. This can help improve 
+load balancing and resource utilization, especially in situations where a task 
+is waiting for resources or data from other tasks.
+
+```c
+#pragma omp parallel
+{
+    #pragma omp single
+    {
+        #pragma omp task
+        {
+            // Task 1
+            #pragma omp taskyield
+            // Task 1 can be suspended to allow other tasks to execute
+        }
+
+        #pragma omp task
+        {
+            // Task 2
+        }
+    }
+}
+```
+
+### `#pragma omp taskgroup`
+
+This directive is used to define a task group, which is a set of tasks that 
+share a common synchronization point. When a task group is encountered, it 
+implicitly waits for the completion of all tasks within the group before 
+proceeding. This can be useful for organizing tasks into logical groups and 
+ensuring that all tasks within a group complete before continuing execution.
+
+```c
+#pragma omp parallel
+{
+    #pragma omp single
+    {
+        #pragma omp taskgroup
+        {
+            #pragma omp task
+            {
+                // Task 1
+            }
+
+            #pragma omp task
+            {
+                // Task 2
+            }
+        }
+        // Task 1 and Task 2 must complete before this point
+    }
 }
 ```
 

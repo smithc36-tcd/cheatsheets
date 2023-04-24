@@ -1,4 +1,4 @@
-Here is a brief definition of each concept under the given headings:
+# Benetly optimizations
 
 **Data Structures**
 - Packing and encoding: Techniques for representing data more compactly or efficiently, which can reduce memory usage and improve performance.

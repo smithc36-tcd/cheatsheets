@@ -1,3 +1,4 @@
 # cheatcheets
 
 - OpenMP
+- Optimisations

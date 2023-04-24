@@ -379,3 +379,73 @@ ensuring that all tasks within a group complete before continuing execution.
 }
 ```
 
+## Custom Reductions
+
+Custom reductions in OpenMP can be created using the declare reduction 
+directive, allowing you to define reduction operations for specific data 
+types or complex operations that are not covered by the built-in reduction 
+operations (such as `+`, `*`, `max`, `min`).
+
+The basic syntax for declaring a custom reduction is:
+
+```c
+#pragma omp declare reduction(reduction_identifier : type : combiner [initializer(init_expr)])
+```
+
+Where:
+
+- `reduction_identifier`: A unique identifier for the reduction operation.
+- `type`: The data type for the reduction variable.
+- `combiner`: An expression that combines the original variable (omp_out) with a private copy (omp_in), typically using a reduction operation such as addition or multiplication.
+- `initializer(init_expr)`: (Optional) An expression to initialize the private copies of the reduction variable.
+
+Here's an example of a custom reduction in C using OpenMP to find the point 
+with the maximum magnitude in a list of 2D points:
+
+```c
+#include <stdio.h>
+#include <math.h>
+#include <omp.h>
+
+typedef struct {
+    double x, y;
+} Point;
+
+// Define a custom reduction operation for finding the point with the maximum magnitude
+#pragma omp declare reduction(max_magnitude : Point : \
+                    (magnitude(omp_out) < magnitude(omp_in) ? omp_out = omp_in : omp_out)) \
+                    initializer(omp_priv = (Point){0, 0})
+
+double magnitude(const Point a) {
+    return sqrt(a.x * a.x + a.y * a.y);
+}
+
+int main() {
+    const int N = 100;
+    Point points[N];
+    // Fill the points array with some values
+    for (int i = 0; i < N; i++) {
+        points[i].x = (double)(i % 10) * 10;
+        points[i].y = (double)(i / 10) * 10;
+    }
+
+    Point ref_point = {0, 0};
+    Point max_magnitude_point = points[0];
+
+    #pragma omp parallel for reduction(max_magnitude : max_magnitude_point)
+    for (int i = 0; i < N; i++) {
+        if (magnitude(max_magnitude_point) < magnitude(points[i])) {
+            max_magnitude_point = points[i];
+        }
+    }
+
+    printf("Max magnitude point: (%.2f, %.2f)\n", max_magnitude_point.x, max_magnitude_point.y);
+    return 0;
+}
+```
+In this example, we define a custom reduction operation to find the point with 
+the maximum magnitude (i.e., the point farthest from the origin). The combiner 
+expression compares the magnitude of the private copy (`omp_in`) to the magnitude 
+of the original reduction variable (`omp_out`) and updates the original variable 
+if the private copy has a greater magnitude. The initializer sets the private 
+copies to (0, 0).
